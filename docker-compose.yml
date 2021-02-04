@@ -1,0 +1,58 @@
+version: "3.7"
+services:
+  core:
+    container_name: core
+    build: core/.
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+      API_PREFIX: ${API_PREFIX:-/api}
+      DOMAIN: ${DOMAIN:-127.0.0.1}
+    restart: always
+    depends_on:
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core.rule=Host(`${DOMAIN:-192.168.1.106}`) && PathPrefix(`${API_PREFIX:-/api}`)"
+      - "traefik.http.middlewares.core-middleware.stripprefix.prefixes=${API_PREFIX:-/api}"
+      - "traefik.http.middlewares.core-middleware.stripprefix.forceslash=true"
+      - "traefik.http.routers.core.middlewares=core-middleware"
+      - "traefik.http.routers.core.entrypoints=web"
+      - "traefik.http.services.core.loadbalancer.server.port=80"
+    networks:
+      - traefik
+      - database
+  db:
+    container_name: db
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: 'terra'
+      MYSQL_ROOT_PASSWORD: 'root'
+      DB_PATH_HOST: ./volumes/db
+    volumes:
+      - ./volumes/db:/var/lib/mysql:rw,delegated
+    ports:
+      - "3306:3306"
+    restart: always
+    networks:
+      - database
+#    command:
+#      bash -c " exec /entrypoint.sh; ln -snf /usr/share/zoneinfo/Europe/Warsaw /etc/localtime && dpkg-reconfigure -f noninteractive tzdata;"
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: 'root'
+    restart: always
+    networks:
+      - database
+networks:
+  traefik:
+    external:
+      name: traefik
+  database:
+      name: dashboard_database
