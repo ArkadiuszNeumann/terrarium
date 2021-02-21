@@ -1,7 +1,7 @@
 version: "3.0"
 services:
-  load-balancer:
-    image: traefik:v2.1.4
+  load_balancer:
+    image: traefik:v2.2.0
 #    environment:
 #      COMPOSE_CONVERT_WINDOWS_PATHS: 1
     command:
